@@ -1,0 +1,36 @@
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Dependencies
+vendor/
+node_modules/
+
+# Build artifacts
+public/hot
+public/storage
+
+# Storage
+storage/logs/
+storage/app/
+bootstrap/cache/
+
+# Composer
+composer.lock
+
+# Archives
+*.zip
+*.tar.gz
+*.tar
+
+# OS
+Thumbs.db
