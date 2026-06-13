@@ -1,0 +1,6 @@
+---
+deployment:
+  tasks:
+    - export DEPLOYPATH=/home/jaipur2s/public_html/manan/
+    - /bin/mkdir -p $DEPLOYPATH
+    - /bin/cp -R ./* $DEPLOYPATH
