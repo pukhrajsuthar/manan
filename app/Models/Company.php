@@ -12,11 +12,13 @@ class Company extends Model
         'gstin', 'pan', 'phone', 'alternate_phone', 'email', 'website',
         'bank_name', 'bank_account_number', 'bank_ifsc', 'bank_branch',
         'logo_path', 'invoice_prefix', 'invoice_counter', 'financial_year',
-        'currency', 'is_active',
+        'currency', 'is_active', 'show_discount', 'show_tax',
     ];
 
     protected $casts = [
-        'is_active'       => 'boolean',
+        'is_active'      => 'boolean',
+        'show_discount'  => 'boolean',
+        'show_tax'       => 'boolean',
         'invoice_counter' => 'integer',
     ];
 

@@ -181,9 +181,9 @@ table.items tfoot td.r { text-align: right; }
     'cancelled' => 'badge-cancelled',
   ][$invoice->status] ?? 'badge-draft';
 
-  $hasDiscount = $invoice->items->sum('discount_amount') > 0;
-  $hasCgst     = $invoice->cgst_total > 0;
-  $hasIgst     = $invoice->igst_total > 0;
+  $hasDiscount = $invoice->company->show_discount && $invoice->items->sum('discount_amount') > 0;
+  $hasCgst     = $invoice->company->show_tax && $invoice->cgst_total > 0;
+  $hasIgst     = $invoice->company->show_tax && $invoice->igst_total > 0;
 
   // Number of columns in items table
   $extraCols = ($hasDiscount ? 1 : 0) + ($hasCgst ? 2 : 0) + ($hasIgst ? 1 : 0);
@@ -297,7 +297,7 @@ table.items tfoot td.r { text-align: right; }
         @endforeach
       </tbody>
       <tfoot>
-        @if($invoice->discount_amount > 0)
+        @if($invoice->company->show_discount && $invoice->discount_amount > 0)
         <tr>
           <td colspan="{{ $totalCols - 1 }}" class="r">Subtotal</td>
           <td class="r">{{ number_format($invoice->subtotal, 2) }}</td>
@@ -307,21 +307,23 @@ table.items tfoot td.r { text-align: right; }
           <td class="r">- {{ number_format($invoice->discount_amount, 2) }}</td>
         </tr>
         @endif
-        @if($hasCgst)
-        <tr>
-          <td colspan="{{ $totalCols - 1 }}" class="r">CGST</td>
-          <td class="r">{{ number_format($invoice->cgst_total, 2) }}</td>
-        </tr>
-        <tr>
-          <td colspan="{{ $totalCols - 1 }}" class="r">SGST</td>
-          <td class="r">{{ number_format($invoice->sgst_total, 2) }}</td>
-        </tr>
-        @endif
-        @if($hasIgst)
-        <tr>
-          <td colspan="{{ $totalCols - 1 }}" class="r">IGST</td>
-          <td class="r">{{ number_format($invoice->igst_total, 2) }}</td>
-        </tr>
+        @if($invoice->company->show_tax)
+          @if($hasCgst)
+          <tr>
+            <td colspan="{{ $totalCols - 1 }}" class="r">CGST</td>
+            <td class="r">{{ number_format($invoice->cgst_total, 2) }}</td>
+          </tr>
+          <tr>
+            <td colspan="{{ $totalCols - 1 }}" class="r">SGST</td>
+            <td class="r">{{ number_format($invoice->sgst_total, 2) }}</td>
+          </tr>
+          @endif
+          @if($hasIgst)
+          <tr>
+            <td colspan="{{ $totalCols - 1 }}" class="r">IGST</td>
+            <td class="r">{{ number_format($invoice->igst_total, 2) }}</td>
+          </tr>
+          @endif
         @endif
         <tr class="row-grand">
           <td colspan="{{ $totalCols - 1 }}" class="r">GRAND TOTAL</td>

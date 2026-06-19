@@ -48,6 +48,21 @@
             <div class="col-md-3"><div class="form-group"><label>Currency *</label><input name="currency" class="form-control" value="{{ old('currency', $company->currency) }}" required></div></div>
             <div class="col-md-3"><div class="form-group"><label>Status</label><div class="custom-control custom-switch mt-2"><input type="checkbox" name="is_active" class="custom-control-input" id="is_active" value="1" {{ old('is_active', $company->is_active) ? 'checked' : '' }}><label class="custom-control-label" for="is_active">Active</label></div></div></div>
         </div>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label>Invoice Display Options</label>
+                    <div class="custom-control custom-switch mt-2">
+                        <input type="checkbox" name="show_discount" class="custom-control-input" id="show_discount" value="1" {{ old('show_discount', $company->show_discount) ? 'checked' : '' }}>
+                        <label class="custom-control-label" for="show_discount">Show Discount Column</label>
+                    </div>
+                    <div class="custom-control custom-switch">
+                        <input type="checkbox" name="show_tax" class="custom-control-input" id="show_tax" value="1" {{ old('show_tax', $company->show_tax) ? 'checked' : '' }}>
+                        <label class="custom-control-label" for="show_tax">Show Tax Column</label>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
     <div class="card-footer">
         <button type="submit" class="btn btn-primary">Update Company</button>

@@ -66,7 +66,12 @@
                 <hr>
                 <table class="table table-sm table-bordered mt-3">
                     <thead class="thead-light">
-                        <tr><th>#</th><th>Item</th><th>HSN</th><th>Qty</th><th>Unit</th><th>Rate</th><th>Disc.</th><th>Tax</th><th>Amount</th></tr>
+                        <tr>
+                            <th>#</th><th>Item</th><th>HSN</th><th>Qty</th><th>Unit</th><th>Rate</th>
+                            @if($invoice->company->show_discount)<th>Disc.</th>@endif
+                            @if($invoice->company->show_tax)<th>Tax</th>@endif
+                            <th>Amount</th>
+                        </tr>
                     </thead>
                     <tbody>
                     @foreach($invoice->items as $i => $line)
@@ -77,26 +82,33 @@
                             <td>{{ $line->quantity }}</td>
                             <td>{{ $line->unit }}</td>
                             <td>₹{{ number_format($line->rate, 2) }}</td>
-                            <td>{{ $line->discount_percent ?? 0 }}%</td>
-                            <td>{{ $line->item->taxRule->name ?? '—' }}</td>
+                            @if($invoice->company->show_discount)<td>{{ $line->discount_percent ?? 0 }}%</td>@endif
+                            @if($invoice->company->show_tax)<td>{{ $line->item->taxRule->name ?? '—' }}</td>@endif
                             <td>₹{{ number_format($line->total, 2) }}</td>
                         </tr>
                     @endforeach
                     </tbody>
                     <tfoot>
-                        <tr><td colspan="8" class="text-right"><strong>Subtotal</strong></td><td>₹{{ number_format($invoice->subtotal, 2) }}</td></tr>
-                        @if($invoice->discount_amount > 0)
-                        <tr><td colspan="8" class="text-right">Discount</td><td>-₹{{ number_format($invoice->discount_amount, 2) }}</td></tr>
+                        @php
+                            $colspanCount = 6;
+                            if($invoice->company->show_discount) $colspanCount++;
+                            if($invoice->company->show_tax) $colspanCount++;
+                        @endphp
+                        <tr><td colspan="{{ $colspanCount }}" class="text-right"><strong>Subtotal</strong></td><td>₹{{ number_format($invoice->subtotal, 2) }}</td></tr>
+                        @if($invoice->company->show_discount && $invoice->discount_amount > 0)
+                        <tr><td colspan="{{ $colspanCount }}" class="text-right">Discount</td><td>-₹{{ number_format($invoice->discount_amount, 2) }}</td></tr>
                         @endif
-                        <tr><td colspan="8" class="text-right">Taxable Amount</td><td>₹{{ number_format($invoice->taxable_amount, 2) }}</td></tr>
-                        @if($invoice->cgst_total > 0)
-                        <tr><td colspan="8" class="text-right">CGST</td><td>₹{{ number_format($invoice->cgst_total, 2) }}</td></tr>
-                        <tr><td colspan="8" class="text-right">SGST</td><td>₹{{ number_format($invoice->sgst_total, 2) }}</td></tr>
+                        <tr><td colspan="{{ $colspanCount }}" class="text-right">Taxable Amount</td><td>₹{{ number_format($invoice->taxable_amount, 2) }}</td></tr>
+                        @if($invoice->company->show_tax)
+                            @if($invoice->cgst_total > 0)
+                            <tr><td colspan="{{ $colspanCount }}" class="text-right">CGST</td><td>₹{{ number_format($invoice->cgst_total, 2) }}</td></tr>
+                            <tr><td colspan="{{ $colspanCount }}" class="text-right">SGST</td><td>₹{{ number_format($invoice->sgst_total, 2) }}</td></tr>
+                            @endif
+                            @if($invoice->igst_total > 0)
+                            <tr><td colspan="{{ $colspanCount }}" class="text-right">IGST</td><td>₹{{ number_format($invoice->igst_total, 2) }}</td></tr>
+                            @endif
                         @endif
-                        @if($invoice->igst_total > 0)
-                        <tr><td colspan="8" class="text-right">IGST</td><td>₹{{ number_format($invoice->igst_total, 2) }}</td></tr>
-                        @endif
-                        <tr class="table-active"><td colspan="8" class="text-right"><strong>Grand Total</strong></td><td><strong>₹{{ number_format($invoice->grand_total, 2) }}</strong></td></tr>
+                        <tr class="table-active"><td colspan="{{ $colspanCount }}" class="text-right"><strong>Grand Total</strong></td><td><strong>₹{{ number_format($invoice->grand_total, 2) }}</strong></td></tr>
                     </tfoot>
                 </table>
                 @if($invoice->notes)
