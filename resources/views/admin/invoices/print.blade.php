@@ -184,10 +184,11 @@ table.items tfoot td.r { text-align: right; }
   $hasDiscount = $invoice->company->show_discount && $invoice->items->sum('discount_amount') > 0;
   $hasCgst     = $invoice->company->show_tax && $invoice->cgst_total > 0;
   $hasIgst     = $invoice->company->show_tax && $invoice->igst_total > 0;
+  $showHsn     = $invoice->company->show_hsn;
 
   // Number of columns in items table
-  $extraCols = ($hasDiscount ? 1 : 0) + ($hasCgst ? 2 : 0) + ($hasIgst ? 1 : 0);
-  $totalCols = 7 + $extraCols; // #, desc, hsn, qty, unit, rate, [disc], [cgst,sgst], [igst], amount
+  $extraCols = ($showHsn ? 1 : 0) + ($hasDiscount ? 1 : 0) + ($hasCgst ? 2 : 0) + ($hasIgst ? 1 : 0);
+  $totalCols = 6 + $extraCols; // #, desc, [hsn], qty, unit, rate, [disc], [cgst,sgst], [igst], amount
 @endphp
 
 @foreach($copies as $ci => $copy)
@@ -260,7 +261,7 @@ table.items tfoot td.r { text-align: right; }
         <tr>
           <th style="width:22px;">#</th>
           <th>Description</th>
-          <th style="width:40px;">HSN</th>
+          @if($showHsn)<th style="width:40px;">HSN</th>@endif
           <th class="r" style="width:46px;">Qty</th>
           <th style="width:30px;">Unit</th>
           <th class="r" style="width:60px;">Rate (&#8377;)</th>
@@ -278,7 +279,7 @@ table.items tfoot td.r { text-align: right; }
         <tr>
           <td>{{ $i + 1 }}</td>
           <td>{{ $line->description }}</td>
-          <td>{{ $line->hsn_code ?? '&mdash;' }}</td>
+          @if($showHsn)<td>{{ $line->hsn_code ?? '&mdash;' }}</td>@endif
           <td class="r">{{ rtrim(rtrim(number_format($line->quantity, 3), '0'), '.') }}</td>
           <td>{{ $line->unit }}</td>
           <td class="r">{{ number_format($line->rate, 2) }}</td>

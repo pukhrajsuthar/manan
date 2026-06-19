@@ -67,7 +67,9 @@
                 <table class="table table-sm table-bordered mt-3">
                     <thead class="thead-light">
                         <tr>
-                            <th>#</th><th>Item</th><th>HSN</th><th>Qty</th><th>Unit</th><th>Rate</th>
+                            <th>#</th><th>Item</th>
+                            @if($invoice->company->show_hsn)<th>HSN</th>@endif
+                            <th>Qty</th><th>Unit</th><th>Rate</th>
                             @if($invoice->company->show_discount)<th>Disc.</th>@endif
                             @if($invoice->company->show_tax)<th>Tax</th>@endif
                             <th>Amount</th>
@@ -78,7 +80,7 @@
                         <tr>
                             <td>{{ $i + 1 }}</td>
                             <td>{{ $line->item->name ?? $line->description }}</td>
-                            <td>{{ $line->hsn_code ?? '—' }}</td>
+                            @if($invoice->company->show_hsn)<td>{{ $line->hsn_code ?? '—' }}</td>@endif
                             <td>{{ $line->quantity }}</td>
                             <td>{{ $line->unit }}</td>
                             <td>₹{{ number_format($line->rate, 2) }}</td>
@@ -91,6 +93,7 @@
                     <tfoot>
                         @php
                             $colspanCount = 6;
+                            if($invoice->company->show_hsn) $colspanCount++;
                             if($invoice->company->show_discount) $colspanCount++;
                             if($invoice->company->show_tax) $colspanCount++;
                         @endphp

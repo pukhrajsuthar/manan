@@ -60,6 +60,10 @@
                         <input type="checkbox" name="show_tax" class="custom-control-input" id="show_tax" value="1" {{ old('show_tax', $company->show_tax) ? 'checked' : '' }}>
                         <label class="custom-control-label" for="show_tax">Show Tax Column</label>
                     </div>
+                    <div class="custom-control custom-switch">
+                        <input type="checkbox" name="show_hsn" class="custom-control-input" id="show_hsn" value="1" {{ old('show_hsn', $company->show_hsn) ? 'checked' : '' }}>
+                        <label class="custom-control-label" for="show_hsn">Show HSN Column</label>
+                    </div>
                 </div>
             </div>
         </div>

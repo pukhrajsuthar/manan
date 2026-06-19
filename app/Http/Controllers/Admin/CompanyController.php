@@ -41,9 +41,15 @@ class CompanyController extends Controller
             'financial_year'       => 'required|string|max:10',
             'currency'             => 'required|string|max:5',
             'is_active'            => 'boolean',
+            'show_discount'        => 'boolean',
+            'show_tax'             => 'boolean',
+            'show_hsn'             => 'boolean',
         ]);
 
         $data['is_active']       = $request->boolean('is_active', true);
+        $data['show_discount']   = $request->boolean('show_discount', true);
+        $data['show_tax']        = $request->boolean('show_tax', true);
+        $data['show_hsn']        = $request->boolean('show_hsn', true);
         $data['invoice_counter'] = 1;
 
         Company::create($data);
@@ -77,9 +83,15 @@ class CompanyController extends Controller
             'financial_year'       => 'required|string|max:10',
             'currency'             => 'required|string|max:5',
             'is_active'            => 'boolean',
+            'show_discount'        => 'boolean',
+            'show_tax'             => 'boolean',
+            'show_hsn'             => 'boolean',
         ]);
 
-        $data['is_active'] = $request->boolean('is_active');
+        $data['is_active']     = $request->boolean('is_active');
+        $data['show_discount'] = $request->boolean('show_discount');
+        $data['show_tax']      = $request->boolean('show_tax');
+        $data['show_hsn']      = $request->boolean('show_hsn');
         $company->update($data);
         return redirect()->route('admin.companies.index')->with('success', 'Company updated.');
     }

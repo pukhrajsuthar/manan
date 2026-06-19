@@ -52,6 +52,7 @@
                   data-fy="{{ $co->financial_year }}"
                   data-show-discount="{{ $co->show_discount ? '1' : '0' }}"
                   data-show-tax="{{ $co->show_tax ? '1' : '0' }}"
+                  data-show-hsn="{{ $co->show_hsn ? '1' : '0' }}"
                   {{ old('company_id') == $co->id ? 'selected' : '' }}>
                   {{ $co->name }}
                 </option>
@@ -133,7 +134,7 @@
               <tr>
                 <th style="width:32px">#</th>
                 <th style="min-width:160px">Item / Description</th>
-                <th style="width:70px">HSN</th>
+                <th style="width:70px" id="col-hsn-header" class="hsn-column">HSN</th>
                 <th style="width:80px">Qty</th>
                 <th style="width:60px">Unit</th>
                 <th style="width:100px">Rate (₹)</th>
@@ -215,7 +216,7 @@
       <input type="text" class="form-control form-control-sm line-desc" name="lines[__IDX__][description]" placeholder="Description" required>
       <input type="hidden" class="line-tax-rule" name="lines[__IDX__][tax_rule_id]" value="">
     </td>
-    <td><input type="text" class="form-control form-control-sm line-hsn" name="lines[__IDX__][hsn_code]" placeholder="HSN" maxlength="20"></td>
+    <td class="hsn-column"><input type="text" class="form-control form-control-sm line-hsn" name="lines[__IDX__][hsn_code]" placeholder="HSN" maxlength="20"></td>
     <td><input type="number" class="form-control form-control-sm line-qty" name="lines[__IDX__][quantity]" value="1" step="0.001" min="0.001" required></td>
     <td><input type="text" class="form-control form-control-sm line-unit" name="lines[__IDX__][unit]" value="Nos" maxlength="20" required></td>
     <td><input type="number" class="form-control form-control-sm line-rate" name="lines[__IDX__][rate]" value="0" step="0.01" min="0" required></td>
@@ -263,10 +264,11 @@
     }
     document.getElementById('financial_year').value = opt.dataset.fy || '';
 
-    // Toggle discount and tax columns based on company settings
+    // Toggle discount, tax, and hsn columns based on company settings
     const showDiscount = opt.dataset.showDiscount === '1';
     const showTax      = opt.dataset.showTax === '1';
-    toggleColumns(showDiscount, showTax);
+    const showHsn      = opt.dataset.showHsn === '1';
+    toggleColumns(showDiscount, showTax, showHsn);
   });
 
   // ── Add row ──
@@ -415,8 +417,8 @@
   function set(id, val) { const el = document.getElementById(id); if (el) el.textContent = val; }
   function toggle(id, show) { const el = document.getElementById(id); if (el) el.style.display = show ? '' : 'none'; }
 
-  // ── Toggle discount/tax columns visibility based on company ──
-  function toggleColumns(showDiscount, showTax) {
+  // ── Toggle discount/tax/hsn columns visibility based on company ──
+  function toggleColumns(showDiscount, showTax, showHsn) {
     // Hide/show discount column
     document.querySelectorAll('.discount-column').forEach(el => {
       el.style.display = showDiscount ? '' : 'none';
@@ -424,6 +426,10 @@
     // Hide/show tax column
     document.querySelectorAll('.tax-column').forEach(el => {
       el.style.display = showTax ? '' : 'none';
+    });
+    // Hide/show HSN column
+    document.querySelectorAll('.hsn-column').forEach(el => {
+      el.style.display = showHsn ? '' : 'none';
     });
   }
 
@@ -436,7 +442,8 @@
     const opt = companySel.options[companySel.selectedIndex];
     const showDiscount = opt.dataset.showDiscount === '1';
     const showTax = opt.dataset.showTax === '1';
-    toggleColumns(showDiscount, showTax);
+    const showHsn = opt.dataset.showHsn === '1';
+    toggleColumns(showDiscount, showTax, showHsn);
   }
 })();
 </script>

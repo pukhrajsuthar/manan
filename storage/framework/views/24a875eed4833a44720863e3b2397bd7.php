@@ -86,7 +86,12 @@
                 <hr>
                 <table class="table table-sm table-bordered mt-3">
                     <thead class="thead-light">
-                        <tr><th>#</th><th>Item</th><th>HSN</th><th>Qty</th><th>Unit</th><th>Rate</th><th>Disc.</th><th>Tax</th><th>Amount</th></tr>
+                        <tr>
+                            <th>#</th><th>Item</th><th>HSN</th><th>Qty</th><th>Unit</th><th>Rate</th>
+                            <?php if($invoice->company->show_discount): ?><th>Disc.</th><?php endif; ?>
+                            <?php if($invoice->company->show_tax): ?><th>Tax</th><?php endif; ?>
+                            <th>Amount</th>
+                        </tr>
                     </thead>
                     <tbody>
                     <?php $__currentLoopData = $invoice->items; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $i => $line): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
@@ -97,26 +102,33 @@
                             <td><?php echo e($line->quantity); ?></td>
                             <td><?php echo e($line->unit); ?></td>
                             <td>₹<?php echo e(number_format($line->rate, 2)); ?></td>
-                            <td><?php echo e($line->discount_percent ?? 0); ?>%</td>
-                            <td><?php echo e($line->item->taxRule->name ?? '—'); ?></td>
+                            <?php if($invoice->company->show_discount): ?><td><?php echo e($line->discount_percent ?? 0); ?>%</td><?php endif; ?>
+                            <?php if($invoice->company->show_tax): ?><td><?php echo e($line->item->taxRule->name ?? '—'); ?></td><?php endif; ?>
                             <td>₹<?php echo e(number_format($line->total, 2)); ?></td>
                         </tr>
                     <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                     </tbody>
                     <tfoot>
-                        <tr><td colspan="8" class="text-right"><strong>Subtotal</strong></td><td>₹<?php echo e(number_format($invoice->subtotal, 2)); ?></td></tr>
-                        <?php if($invoice->discount_amount > 0): ?>
-                        <tr><td colspan="8" class="text-right">Discount</td><td>-₹<?php echo e(number_format($invoice->discount_amount, 2)); ?></td></tr>
+                        <?php
+                            $colspanCount = 6;
+                            if($invoice->company->show_discount) $colspanCount++;
+                            if($invoice->company->show_tax) $colspanCount++;
+                        ?>
+                        <tr><td colspan="<?php echo e($colspanCount); ?>" class="text-right"><strong>Subtotal</strong></td><td>₹<?php echo e(number_format($invoice->subtotal, 2)); ?></td></tr>
+                        <?php if($invoice->company->show_discount && $invoice->discount_amount > 0): ?>
+                        <tr><td colspan="<?php echo e($colspanCount); ?>" class="text-right">Discount</td><td>-₹<?php echo e(number_format($invoice->discount_amount, 2)); ?></td></tr>
                         <?php endif; ?>
-                        <tr><td colspan="8" class="text-right">Taxable Amount</td><td>₹<?php echo e(number_format($invoice->taxable_amount, 2)); ?></td></tr>
-                        <?php if($invoice->cgst_total > 0): ?>
-                        <tr><td colspan="8" class="text-right">CGST</td><td>₹<?php echo e(number_format($invoice->cgst_total, 2)); ?></td></tr>
-                        <tr><td colspan="8" class="text-right">SGST</td><td>₹<?php echo e(number_format($invoice->sgst_total, 2)); ?></td></tr>
+                        <tr><td colspan="<?php echo e($colspanCount); ?>" class="text-right">Taxable Amount</td><td>₹<?php echo e(number_format($invoice->taxable_amount, 2)); ?></td></tr>
+                        <?php if($invoice->company->show_tax): ?>
+                            <?php if($invoice->cgst_total > 0): ?>
+                            <tr><td colspan="<?php echo e($colspanCount); ?>" class="text-right">CGST</td><td>₹<?php echo e(number_format($invoice->cgst_total, 2)); ?></td></tr>
+                            <tr><td colspan="<?php echo e($colspanCount); ?>" class="text-right">SGST</td><td>₹<?php echo e(number_format($invoice->sgst_total, 2)); ?></td></tr>
+                            <?php endif; ?>
+                            <?php if($invoice->igst_total > 0): ?>
+                            <tr><td colspan="<?php echo e($colspanCount); ?>" class="text-right">IGST</td><td>₹<?php echo e(number_format($invoice->igst_total, 2)); ?></td></tr>
+                            <?php endif; ?>
                         <?php endif; ?>
-                        <?php if($invoice->igst_total > 0): ?>
-                        <tr><td colspan="8" class="text-right">IGST</td><td>₹<?php echo e(number_format($invoice->igst_total, 2)); ?></td></tr>
-                        <?php endif; ?>
-                        <tr class="table-active"><td colspan="8" class="text-right"><strong>Grand Total</strong></td><td><strong>₹<?php echo e(number_format($invoice->grand_total, 2)); ?></strong></td></tr>
+                        <tr class="table-active"><td colspan="<?php echo e($colspanCount); ?>" class="text-right"><strong>Grand Total</strong></td><td><strong>₹<?php echo e(number_format($invoice->grand_total, 2)); ?></strong></td></tr>
                     </tfoot>
                 </table>
                 <?php if($invoice->notes): ?>
