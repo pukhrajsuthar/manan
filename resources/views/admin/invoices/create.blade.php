@@ -50,6 +50,8 @@
                   data-prefix="{{ $co->invoice_prefix }}"
                   data-counter="{{ $co->invoice_counter }}"
                   data-fy="{{ $co->financial_year }}"
+                  data-show-discount="{{ $co->show_discount ? '1' : '0' }}"
+                  data-show-tax="{{ $co->show_tax ? '1' : '0' }}"
                   {{ old('company_id') == $co->id ? 'selected' : '' }}>
                   {{ $co->name }}
                 </option>
@@ -135,8 +137,8 @@
                 <th style="width:80px">Qty</th>
                 <th style="width:60px">Unit</th>
                 <th style="width:100px">Rate (₹)</th>
-                <th style="width:65px">Disc %</th>
-                <th style="width:130px">Tax Rule</th>
+                <th style="width:65px" id="col-disc-header" class="discount-column">Disc %</th>
+                <th style="width:130px" id="col-tax-header" class="tax-column">Tax Rule</th>
                 <th style="width:100px" class="text-right">Amount (₹)</th>
                 <th style="width:32px"></th>
               </tr>
@@ -217,8 +219,8 @@
     <td><input type="number" class="form-control form-control-sm line-qty" name="lines[__IDX__][quantity]" value="1" step="0.001" min="0.001" required></td>
     <td><input type="text" class="form-control form-control-sm line-unit" name="lines[__IDX__][unit]" value="Nos" maxlength="20" required></td>
     <td><input type="number" class="form-control form-control-sm line-rate" name="lines[__IDX__][rate]" value="0" step="0.01" min="0" required></td>
-    <td><input type="number" class="form-control form-control-sm line-disc" name="lines[__IDX__][discount_pct]" value="0" step="0.01" min="0" max="100"></td>
-    <td>
+    <td class="discount-column"><input type="number" class="form-control form-control-sm line-disc" name="lines[__IDX__][discount_pct]" value="0" step="0.01" min="0" max="100"></td>
+    <td class="tax-column">
       <select class="form-control form-control-sm line-taxrule-select" data-for="tax_rule_id">
         <option value="">None (Exempt)</option>
         @foreach($taxRules as $tr)
@@ -248,7 +250,10 @@
   // ── Generate invoice number when company changes ──
   document.getElementById('company_id').addEventListener('change', function() {
     const opt = this.options[this.selectedIndex];
-    if (!opt.value) return;
+    if (!opt.value) {
+      showAllColumns();
+      return;
+    }
     const prefix  = opt.dataset.prefix || 'INV';
     const fy      = (opt.dataset.fy || '2025-26').replace('-', '');
     const counter = String(opt.dataset.counter || 1).padStart(4, '0');
@@ -257,6 +262,11 @@
       invNo.value = `${prefix}-${fy}-${counter}`;
     }
     document.getElementById('financial_year').value = opt.dataset.fy || '';
+
+    // Toggle discount and tax columns based on company settings
+    const showDiscount = opt.dataset.showDiscount === '1';
+    const showTax      = opt.dataset.showTax === '1';
+    toggleColumns(showDiscount, showTax);
   });
 
   // ── Add row ──
@@ -380,14 +390,22 @@
     set('sum-subtotal', '₹ ' + fmt(subtotal));
     set('sum-grand',    '₹ ' + fmt(grandTotal));
 
-    toggle('row-discount', discountTotal > 0);
+    // Check company settings
+    const companySel = document.getElementById('company_id');
+    const opt = companySel.options[companySel.selectedIndex];
+    const showDiscount = opt && opt.dataset.showDiscount === '1';
+    const showTax = opt && opt.dataset.showTax === '1';
+
+    // Toggle discount based on company setting AND if discount amount > 0
+    toggle('row-discount', showDiscount && discountTotal > 0);
     set('sum-discount', '- ₹ ' + fmt(discountTotal));
 
-    toggle('row-cgst', cgstTotal > 0.001);
+    // Toggle tax rows based on company setting AND if tax amount > 0.001
+    toggle('row-cgst', showTax && cgstTotal > 0.001);
     set('sum-cgst', '₹ ' + fmt(cgstTotal));
-    toggle('row-sgst', sgstTotal > 0.001);
+    toggle('row-sgst', showTax && sgstTotal > 0.001);
     set('sum-sgst', '₹ ' + fmt(sgstTotal));
-    toggle('row-igst', igstTotal > 0.001);
+    toggle('row-igst', showTax && igstTotal > 0.001);
     set('sum-igst', '₹ ' + fmt(igstTotal));
   }
 
@@ -397,8 +415,29 @@
   function set(id, val) { const el = document.getElementById(id); if (el) el.textContent = val; }
   function toggle(id, show) { const el = document.getElementById(id); if (el) el.style.display = show ? '' : 'none'; }
 
+  // ── Toggle discount/tax columns visibility based on company ──
+  function toggleColumns(showDiscount, showTax) {
+    // Hide/show discount column
+    document.querySelectorAll('.discount-column').forEach(el => {
+      el.style.display = showDiscount ? '' : 'none';
+    });
+    // Hide/show tax column
+    document.querySelectorAll('.tax-column').forEach(el => {
+      el.style.display = showTax ? '' : 'none';
+    });
+  }
+
   // Start with one empty row
   addRow();
+
+  // Initialize column visibility on page load
+  const companySel = document.getElementById('company_id');
+  if (companySel.value) {
+    const opt = companySel.options[companySel.selectedIndex];
+    const showDiscount = opt.dataset.showDiscount === '1';
+    const showTax = opt.dataset.showTax === '1';
+    toggleColumns(showDiscount, showTax);
+  }
 })();
 </script>
 @endpush
