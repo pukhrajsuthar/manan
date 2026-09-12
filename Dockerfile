@@ -1,27 +1,20 @@
-FROM php:8.2-fpm
+FROM php:8.2-cli
 
 WORKDIR /app
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    git \
-    curl \
-    unzip \
-    libzip-dev \
+    git curl unzip libzip-dev \
+    && docker-php-ext-install -j$(nproc) zip pdo_mysql mbstring exif pcntl bcmath \
     && rm -rf /var/lib/apt/lists/*
-
-RUN docker-php-ext-install zip
 
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
-COPY . .
+COPY . /app
 
-RUN mkdir -p /app/bootstrap/cache /app/storage
+RUN mkdir -p bootstrap/cache storage && \
+    composer install --prefer-dist --no-dev -q
 
-RUN composer install --no-dev --optimize-autoloader --no-interaction --no-scripts && \
-    composer run-script post-autoload-dump
-
-RUN chown -R www-data:www-data /app/storage /app/bootstrap/cache && \
-    chmod -R 755 /app/storage /app/bootstrap/cache
+RUN chmod -R 755 storage bootstrap/cache
 
 EXPOSE 8000
 
