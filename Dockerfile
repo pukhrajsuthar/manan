@@ -1,56 +1,39 @@
-FROM php:8.4-fpm-alpine
+FROM php:8.2-fpm
 
-# System dependencies
-RUN apk add --no-cache \
-    bash \
+WORKDIR /app
+
+# Install dependencies
+RUN apt-get update && apt-get install -y \
     git \
     curl \
     libpng-dev \
-    libjpeg-turbo-dev \
-    freetype-dev \
+    libonig-dev \
+    libxml2-dev \
     zip \
     unzip \
-    libzip-dev \
-    oniguruma-dev \
-    icu-dev \
-    nodejs \
-    npm
+    mysql-client \
+    && rm -rf /var/lib/apt/lists/*
 
-# PHP extensions
-RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install \
-        pdo \
-        pdo_mysql \
-        mbstring \
-        exif \
-        pcntl \
-        bcmath \
-        gd \
-        zip \
-        intl \
-        opcache
+# Install PHP extensions
+RUN docker-php-ext-install \
+    pdo_mysql \
+    mbstring \
+    exif \
+    pcntl \
+    bcmath
 
-# Composer
-COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+# Install Composer
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
-WORKDIR /var/www/html
-
-# Copy composer files first for layer caching
-COPY composer.json composer.lock* ./
-RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist
-
-# Copy full application
+# Copy project files
 COPY . .
 
-# Finish composer install
-RUN composer dump-autoload --optimize
+# Install Laravel dependencies
+RUN composer install --no-dev --optimize-autoloader
 
-# Permissions
-RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache \
-    && chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
+# Set permissions
+RUN chown -R www-data:www-data /app/storage /app/bootstrap/cache
 
-# PHP config
-COPY docker/php/php.ini /usr/local/etc/php/conf.d/custom.ini
+EXPOSE 8000
 
-EXPOSE 9000
-CMD ["php-fpm"]
+CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8000"]
