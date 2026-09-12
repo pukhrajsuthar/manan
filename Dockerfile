@@ -3,7 +3,7 @@ FROM php:8.2-cli
 WORKDIR /app
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    git curl unzip libzip-dev \
+    git curl unzip libzip-dev libonig-dev libpng-dev \
     && docker-php-ext-install -j$(nproc) zip pdo_mysql mbstring exif pcntl bcmath \
     && rm -rf /var/lib/apt/lists/*
 
