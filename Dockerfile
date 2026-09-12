@@ -5,7 +5,11 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     curl \
+    unzip \
+    libzip-dev \
     && rm -rf /var/lib/apt/lists/*
+
+RUN docker-php-ext-install zip
 
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
