@@ -2,7 +2,17 @@ FROM php:8.2-alpine AS builder
 
 WORKDIR /app
 
-RUN apk add --no-cache composer git
+RUN apk add --no-cache composer git \
+    libpng-dev \
+    oniguruma-dev \
+    libxml2-dev
+
+RUN docker-php-ext-install -j$(nproc) \
+    pdo_mysql \
+    mbstring \
+    exif \
+    pcntl \
+    bcmath
 
 COPY composer.json ./
 
