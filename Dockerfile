@@ -12,9 +12,8 @@ RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local
 COPY . /app
 
 RUN mkdir -p bootstrap/cache storage && \
-    composer install --prefer-dist --no-dev -q
-
-RUN chmod -R 755 storage bootstrap/cache
+    composer install --prefer-dist --no-dev -q && \
+    chmod -R 777 bootstrap/cache storage
 
 EXPOSE 8000
 
