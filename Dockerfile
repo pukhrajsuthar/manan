@@ -1,19 +1,24 @@
+FROM php:8.2-alpine AS builder
+
+WORKDIR /app
+
+RUN apk add --no-cache composer git
+
+COPY composer.json composer.lock ./
+
+RUN mkdir -p /app/bootstrap/cache /app/storage && \
+    composer install --no-dev --optimize-autoloader --no-interaction
+
 FROM php:8.2-alpine
 
 WORKDIR /app
 
-# Install system dependencies
 RUN apk add --no-cache \
-    git \
     curl \
-    zip \
-    unzip \
-    libpng-dev \
-    oniguruma-dev \
-    libxml2-dev \
-    $PHPIZE_DEPS
+    libpng \
+    oniguruma \
+    libxml2
 
-# Install PHP extensions
 RUN docker-php-ext-install -j$(nproc) \
     pdo_mysql \
     mbstring \
@@ -21,21 +26,12 @@ RUN docker-php-ext-install -j$(nproc) \
     pcntl \
     bcmath
 
-# Install Composer
-RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
-
-# Copy project files
+COPY --from=builder /app/vendor ./vendor
+COPY --from=builder /app/bootstrap ./bootstrap
 COPY . .
 
-# Create required directories
-RUN mkdir -p /app/bootstrap/cache /app/storage && \
-    chmod -R 777 /app/bootstrap/cache /app/storage
-
-# Install Laravel dependencies
-RUN composer install --no-dev --optimize-autoloader
-
-# Set proper permissions
-RUN chown -R www-data:www-data /app/storage /app/bootstrap/cache && \
+RUN mkdir -p /app/storage && \
+    chown -R www-data:www-data /app/storage /app/bootstrap/cache && \
     chmod -R 755 /app/storage /app/bootstrap/cache
 
 EXPOSE 8000
