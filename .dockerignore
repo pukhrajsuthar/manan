@@ -1,0 +1,11 @@
+.git
+.gitignore
+node_modules
+npm-debug.log
+.env
+.env.example
+.vscode
+.idea
+.DS_Store
+storage/logs/*
+bootstrap/cache/*
