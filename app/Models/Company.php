@@ -12,15 +12,18 @@ class Company extends Model
         'gstin', 'pan', 'phone', 'alternate_phone', 'email', 'website',
         'bank_name', 'bank_account_number', 'bank_ifsc', 'bank_branch',
         'logo_path', 'invoice_prefix', 'invoice_counter', 'financial_year',
-        'currency', 'is_active', 'show_discount', 'show_tax', 'show_hsn',
+        'currency', 'is_active', 'show_discount', 'show_tax', 'show_hsn', 'invoice_copies',
+        'show_company_gstin', 'show_client_gstin',
     ];
 
     protected $casts = [
-        'is_active'      => 'boolean',
-        'show_discount'  => 'boolean',
-        'show_tax'       => 'boolean',
-        'show_hsn'       => 'boolean',
-        'invoice_counter' => 'integer',
+        'is_active'           => 'boolean',
+        'show_discount'       => 'boolean',
+        'show_tax'            => 'boolean',
+        'show_hsn'            => 'boolean',
+        'show_company_gstin'  => 'boolean',
+        'show_client_gstin'   => 'boolean',
+        'invoice_counter'     => 'integer',
     ];
 
     public function invoices(): HasMany

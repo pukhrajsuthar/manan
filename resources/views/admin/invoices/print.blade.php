@@ -170,10 +170,13 @@ table.items tfoot td.r { text-align: right; }
 @endunless
 
 @php
-  $copies = [
-    ['label' => 'Customer Copy'],
-    ['label' => 'Office Copy'],
-  ];
+  // Determine number of copies based on company setting
+  $numCopies = $invoice->company->invoice_copies ?? 2;
+  $copies = [];
+  $copies[] = ['label' => 'Customer Copy'];
+  if ($numCopies == 2) {
+    $copies[] = ['label' => 'Office Copy'];
+  }
   $statusBadge = [
     'draft'     => 'badge-draft',
     'sent'      => 'badge-sent',
@@ -204,8 +207,10 @@ table.items tfoot td.r { text-align: right; }
 
   <div class="copy">
 
-    {{-- Copy label --}}
+    {{-- Copy label (only show if 2+ copies) --}}
+    @if($numCopies > 1)
     <div class="copy-label">{{ $copy['label'] }}</div>
+    @endif
 
     {{-- ── Header ── --}}
     <table class="header-table" style="border-bottom: 2px solid #2c3e50; padding-bottom: 6px; margin-bottom: 8px;">
@@ -217,7 +222,7 @@ table.items tfoot td.r { text-align: right; }
             {{ $invoice->company->city }},
             {{ $invoice->company->state }} &ndash; {{ $invoice->company->pincode }}<br>
             @if($invoice->company->phone)Ph: {{ $invoice->company->phone }}@endif
-            @if($invoice->company->gstin) &nbsp;|&nbsp; GSTIN: {{ $invoice->company->gstin }}@endif
+            @if($invoice->company->show_company_gstin && $invoice->company->gstin) &nbsp;|&nbsp; GSTIN: {{ $invoice->company->gstin }}@endif
           </div>
         </td>
         <td style="vertical-align: top; text-align: right; white-space: nowrap; padding-left: 10px;">
@@ -241,7 +246,7 @@ table.items tfoot td.r { text-align: right; }
           <div class="addr-name">{{ $invoice->company->name }}</div>
           <div class="addr-line">{{ $invoice->company->address }}</div>
           <div class="addr-line">{{ $invoice->company->city }}, {{ $invoice->company->state }} &ndash; {{ $invoice->company->pincode }}</div>
-          @if($invoice->company->gstin)<div class="addr-line">GSTIN: {{ $invoice->company->gstin }}</div>@endif
+          @if($invoice->company->show_company_gstin && $invoice->company->gstin)<div class="addr-line">GSTIN: {{ $invoice->company->gstin }}</div>@endif
         </td>
         <td style="width: 2%;"></td>
         <td class="addr-box">
@@ -250,7 +255,7 @@ table.items tfoot td.r { text-align: right; }
           <div class="addr-line">{{ $invoice->client->billing_address }}</div>
           <div class="addr-line">{{ $invoice->client->billing_city }}, {{ $invoice->client->billing_state }} &ndash; {{ $invoice->client->billing_pincode }}</div>
           @if($invoice->client->phone)<div class="addr-line">Ph: {{ $invoice->client->phone }}</div>@endif
-          @if($invoice->client->gstin)<div class="addr-line">GSTIN: {{ $invoice->client->gstin }}</div>@endif
+          @if($invoice->company->show_client_gstin && $invoice->client->gstin)<div class="addr-line">GSTIN: {{ $invoice->client->gstin }}</div>@endif
         </td>
       </tr>
     </table>

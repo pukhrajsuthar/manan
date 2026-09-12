@@ -34,6 +34,11 @@
         <div class="card">
             <div class="card-header"><h3 class="card-title">Invoice Details</h3>
                 <div class="card-tools">
+                    <?php if($invoice->status === 'draft'): ?>
+                        <a href="<?php echo e(route('admin.invoices.edit', $invoice)); ?>" class="btn btn-sm btn-warning">
+                            <i class="fas fa-edit"></i> Edit
+                        </a>
+                    <?php endif; ?>
                     <a href="<?php echo e(route('admin.invoices.print', $invoice)); ?>" target="_blank" class="btn btn-sm btn-secondary">
                         <i class="fas fa-print"></i> Print
                     </a>
@@ -66,15 +71,19 @@
                         <strong>Company</strong><br>
                         <?php echo e($invoice->company->name ?? '—'); ?><br>
                         <?php echo e($invoice->company->address ?? ''); ?>, <?php echo e($invoice->company->city ?? ''); ?><br>
+                        <?php if($invoice->company->show_company_gstin): ?>
                         GSTIN: <?php echo e($invoice->company->gstin ?? '—'); ?>
 
+                        <?php endif; ?>
                     </div>
                     <div class="col-md-6">
                         <strong>Client</strong><br>
                         <?php echo e($invoice->client->name ?? '—'); ?><br>
                         <?php echo e($invoice->client->billing_address ?? ''); ?>, <?php echo e($invoice->client->billing_city ?? ''); ?><br>
+                        <?php if($invoice->company->show_client_gstin): ?>
                         GSTIN: <?php echo e($invoice->client->gstin ?? '—'); ?>
 
+                        <?php endif; ?>
                     </div>
                 </div>
                 <hr>
@@ -87,7 +96,9 @@
                 <table class="table table-sm table-bordered mt-3">
                     <thead class="thead-light">
                         <tr>
-                            <th>#</th><th>Item</th><th>HSN</th><th>Qty</th><th>Unit</th><th>Rate</th>
+                            <th>#</th><th>Item</th>
+                            <?php if($invoice->company->show_hsn): ?><th>HSN</th><?php endif; ?>
+                            <th>Qty</th><th>Unit</th><th>Rate</th>
                             <?php if($invoice->company->show_discount): ?><th>Disc.</th><?php endif; ?>
                             <?php if($invoice->company->show_tax): ?><th>Tax</th><?php endif; ?>
                             <th>Amount</th>
@@ -98,7 +109,7 @@
                         <tr>
                             <td><?php echo e($i + 1); ?></td>
                             <td><?php echo e($line->item->name ?? $line->description); ?></td>
-                            <td><?php echo e($line->hsn_code ?? '—'); ?></td>
+                            <?php if($invoice->company->show_hsn): ?><td><?php echo e($line->hsn_code ?? '—'); ?></td><?php endif; ?>
                             <td><?php echo e($line->quantity); ?></td>
                             <td><?php echo e($line->unit); ?></td>
                             <td>₹<?php echo e(number_format($line->rate, 2)); ?></td>
@@ -110,7 +121,8 @@
                     </tbody>
                     <tfoot>
                         <?php
-                            $colspanCount = 6;
+                            $colspanCount = 5; // #, Item, Qty, Unit, Rate
+                            if($invoice->company->show_hsn) $colspanCount++;
                             if($invoice->company->show_discount) $colspanCount++;
                             if($invoice->company->show_tax) $colspanCount++;
                         ?>

@@ -1,9 +1,9 @@
 @extends('adminlte::page')
-@section('title', 'New Invoice')
+@section('title', 'Edit Invoice')
 
 @section('content_header')
 <div class="d-flex justify-content-between align-items-center">
-    <h1>New Invoice</h1>
+    <h1>Edit Invoice: {{ $invoice->invoice_number }}</h1>
     <a href="{{ route('admin.invoices.index') }}" class="btn btn-default">← Back to Invoices</a>
 </div>
 @endsection
@@ -30,8 +30,8 @@
   ])->keyBy('id');
 @endphp
 
-<form method="POST" action="{{ route('admin.invoices.store') }}" id="invoice-form">
-@csrf
+<form method="POST" action="{{ route('admin.invoices.update', $invoice) }}" id="invoice-form">
+@csrf @method('PUT')
 
 <div class="row">
   {{-- Left column: invoice details --}}
@@ -53,7 +53,7 @@
                   data-show-discount="{{ $co->show_discount ? '1' : '0' }}"
                   data-show-tax="{{ $co->show_tax ? '1' : '0' }}"
                   data-show-hsn="{{ $co->show_hsn ? '1' : '0' }}"
-                  {{ old('company_id') == $co->id ? 'selected' : '' }}>
+                  {{ old('company_id', $invoice->company_id) == $co->id ? 'selected' : '' }}>
                   {{ $co->name }}
                 </option>
               @endforeach
@@ -67,7 +67,7 @@
               @foreach($clients as $cl)
                 <option value="{{ $cl->id }}"
                   data-state="{{ $cl->billing_state_code }}"
-                  {{ old('client_id') == $cl->id ? 'selected' : '' }}>
+                  {{ old('client_id', $invoice->client_id) == $cl->id ? 'selected' : '' }}>
                   {{ $cl->name }}
                 </option>
               @endforeach
@@ -80,21 +80,21 @@
             <label>Invoice Number <span class="text-danger">*</span></label>
             <input name="invoice_number" id="invoice_number" type="text"
                    class="form-control @error('invoice_number') is-invalid @enderror"
-                   value="{{ old('invoice_number') }}" required placeholder="Auto-generated">
+                   value="{{ old('invoice_number', $invoice->invoice_number) }}" required>
             @error('invoice_number')<div class="invalid-feedback">{{ $message }}</div>@enderror
           </div>
           <div class="col-md-4 form-group">
             <label>Invoice Date <span class="text-danger">*</span></label>
             <input name="invoice_date" type="date"
                    class="form-control @error('invoice_date') is-invalid @enderror"
-                   value="{{ old('invoice_date', date('Y-m-d')) }}" required>
+                   value="{{ old('invoice_date', $invoice->invoice_date->format('Y-m-d')) }}" required>
             @error('invoice_date')<div class="invalid-feedback">{{ $message }}</div>@enderror
           </div>
           <div class="col-md-4 form-group">
             <label>Due Date</label>
             <input name="due_date" type="date"
                    class="form-control @error('due_date') is-invalid @enderror"
-                   value="{{ old('due_date') }}">
+                   value="{{ old('due_date', $invoice->due_date?->format('Y-m-d')) }}">
             @error('due_date')<div class="invalid-feedback">{{ $message }}</div>@enderror
           </div>
         </div>
@@ -102,15 +102,15 @@
           <div class="col-md-4 form-group">
             <label>Supply Type <span class="text-danger">*</span></label>
             <select name="supply_type" id="supply_type" class="form-control" required>
-              <option value="intra" {{ old('supply_type','intra') === 'intra' ? 'selected' : '' }}>Intra-state (CGST + SGST)</option>
-              <option value="inter" {{ old('supply_type') === 'inter' ? 'selected' : '' }}>Inter-state (IGST)</option>
+              <option value="intra" {{ old('supply_type', $invoice->supply_type) === 'intra' ? 'selected' : '' }}>Intra-state (CGST + SGST)</option>
+              <option value="inter" {{ old('supply_type', $invoice->supply_type) === 'inter' ? 'selected' : '' }}>Inter-state (IGST)</option>
             </select>
           </div>
           <div class="col-md-4 form-group">
             <label>Financial Year <span class="text-danger">*</span></label>
             <input name="financial_year" id="financial_year" type="text"
                    class="form-control @error('financial_year') is-invalid @enderror"
-                   value="{{ old('financial_year', '2025-26') }}" required placeholder="e.g. 2025-26">
+                   value="{{ old('financial_year', $invoice->financial_year) }}" required>
             @error('financial_year')<div class="invalid-feedback">{{ $message }}</div>@enderror
           </div>
         </div>
@@ -170,11 +170,11 @@
         <div class="row">
           <div class="col-md-6 form-group">
             <label>Notes <small class="text-muted">(shown on invoice)</small></label>
-            <textarea name="notes" class="form-control" rows="3">{{ old('notes') }}</textarea>
+            <textarea name="notes" class="form-control" rows="3">{{ old('notes', $invoice->notes) }}</textarea>
           </div>
           <div class="col-md-6 form-group">
             <label>Terms &amp; Conditions</label>
-            <textarea name="terms" class="form-control" rows="3">{{ old('terms', 'Payment as per agreed schedule. Final amount may vary based on actual site measurements.') }}</textarea>
+            <textarea name="terms" class="form-control" rows="3">{{ old('terms', $invoice->terms) }}</textarea>
           </div>
         </div>
       </div>
@@ -392,11 +392,20 @@
     });
 
     if (prefill) {
+      // Set item dropdown if item_id is provided
+      if (prefill.item_id) {
+        itemSel.value = prefill.item_id;
+      }
       descInput.value = prefill.description || '';
       hsnInput.value  = prefill.hsn || '';
       qtyInput.value  = prefill.qty || 1;
       unitInput.value = prefill.unit || 'Nos';
       rateInput.value = prefill.rate || 0;
+      discInput.value = prefill.disc || 0;
+      // Set tax rule if provided
+      if (prefill.taxRule) {
+        taxSel.value = prefill.taxRule;
+      }
     }
     syncTaxHidden(taxSel, taxHidden);
   }
@@ -506,8 +515,24 @@
     }
   }
 
-  // Start with one empty row
-  addRow();
+  // Populate line items from existing invoice
+  @if(isset($invoice) && $invoice->items->count() > 0)
+    @foreach($invoice->items as $item)
+      addRow({
+        item_id: {{ $item->item_id ?? 'null' }},
+        description: "{{ addslashes($item->description) }}",
+        hsn: "{{ addslashes($item->hsn_code ?? '') }}",
+        qty: {{ $item->quantity }},
+        unit: "{{ addslashes($item->unit) }}",
+        rate: {{ $item->rate }},
+        disc: {{ $item->discount_percent ?? 0 }},
+        taxRule: {{ $item->tax_rule_id ?? 'null' }}
+      });
+    @endforeach
+  @else
+    // Start with one empty row for new invoice
+    addRow();
+  @endif
 
   // Initialize column visibility on page load
   const companySel = document.getElementById('company_id');
@@ -518,6 +543,9 @@
     const showHsn = opt.dataset.showHsn === '1';
     toggleColumns(showDiscount, showTax, showHsn);
   }
+
+  // Recalculate totals after populating rows
+  recalcAll();
 })();
 </script>
 @endpush

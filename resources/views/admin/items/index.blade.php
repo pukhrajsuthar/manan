@@ -19,7 +19,7 @@
                     <td>{{ $item->unit }}</td>
                     <td>₹{{ number_format($item->selling_price, 2) }}</td>
                     <td>{{ $item->taxRule->name ?? '—' }}</td>
-                    <td>{{ $item->category ?? '—' }}</td>
+                    <td>{{ $item->category?->name ?? '—' }}</td>
                     <td><span class="badge badge-{{ $item->is_active ? 'success' : 'secondary' }}">{{ $item->is_active ? 'Active' : 'Inactive' }}</span></td>
                     <td>
                         <a href="{{ route('admin.items.edit', $item) }}" class="btn btn-xs btn-warning">Edit</a>
@@ -35,6 +35,8 @@
             </tbody>
         </table>
     </div>
-    <div class="card-footer">{{ $items->links() }}</div>
+    <div class="card-footer d-flex justify-content-center">
+        {{ $items->links('vendor.pagination.bootstrap-4') }}
+    </div>
 </div>
 @endsection

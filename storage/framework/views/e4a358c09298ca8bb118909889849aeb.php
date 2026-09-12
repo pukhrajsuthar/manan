@@ -170,10 +170,13 @@ table.items tfoot td.r { text-align: right; }
 <?php endif; ?>
 
 <?php
-  $copies = [
-    ['label' => 'Customer Copy'],
-    ['label' => 'Office Copy'],
-  ];
+  // Determine number of copies based on company setting
+  $numCopies = $invoice->company->invoice_copies ?? 2;
+  $copies = [];
+  $copies[] = ['label' => 'Customer Copy'];
+  if ($numCopies == 2) {
+    $copies[] = ['label' => 'Office Copy'];
+  }
   $statusBadge = [
     'draft'     => 'badge-draft',
     'sent'      => 'badge-sent',
@@ -184,10 +187,11 @@ table.items tfoot td.r { text-align: right; }
   $hasDiscount = $invoice->company->show_discount && $invoice->items->sum('discount_amount') > 0;
   $hasCgst     = $invoice->company->show_tax && $invoice->cgst_total > 0;
   $hasIgst     = $invoice->company->show_tax && $invoice->igst_total > 0;
+  $showHsn     = $invoice->company->show_hsn;
 
   // Number of columns in items table
-  $extraCols = ($hasDiscount ? 1 : 0) + ($hasCgst ? 2 : 0) + ($hasIgst ? 1 : 0);
-  $totalCols = 7 + $extraCols; // #, desc, hsn, qty, unit, rate, [disc], [cgst,sgst], [igst], amount
+  $extraCols = ($showHsn ? 1 : 0) + ($hasDiscount ? 1 : 0) + ($hasCgst ? 2 : 0) + ($hasIgst ? 1 : 0);
+  $totalCols = 6 + $extraCols; // #, desc, [hsn], qty, unit, rate, [disc], [cgst,sgst], [igst], amount
 ?>
 
 <?php $__currentLoopData = $copies; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $ci => $copy): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
@@ -204,7 +208,9 @@ table.items tfoot td.r { text-align: right; }
   <div class="copy">
 
     
+    <?php if($numCopies > 1): ?>
     <div class="copy-label"><?php echo e($copy['label']); ?></div>
+    <?php endif; ?>
 
     
     <table class="header-table" style="border-bottom: 2px solid #2c3e50; padding-bottom: 6px; margin-bottom: 8px;">
@@ -216,7 +222,7 @@ table.items tfoot td.r { text-align: right; }
             <?php echo e($invoice->company->city); ?>,
             <?php echo e($invoice->company->state); ?> &ndash; <?php echo e($invoice->company->pincode); ?><br>
             <?php if($invoice->company->phone): ?>Ph: <?php echo e($invoice->company->phone); ?><?php endif; ?>
-            <?php if($invoice->company->gstin): ?> &nbsp;|&nbsp; GSTIN: <?php echo e($invoice->company->gstin); ?><?php endif; ?>
+            <?php if($invoice->company->show_company_gstin && $invoice->company->gstin): ?> &nbsp;|&nbsp; GSTIN: <?php echo e($invoice->company->gstin); ?><?php endif; ?>
           </div>
         </td>
         <td style="vertical-align: top; text-align: right; white-space: nowrap; padding-left: 10px;">
@@ -241,7 +247,7 @@ table.items tfoot td.r { text-align: right; }
           <div class="addr-name"><?php echo e($invoice->company->name); ?></div>
           <div class="addr-line"><?php echo e($invoice->company->address); ?></div>
           <div class="addr-line"><?php echo e($invoice->company->city); ?>, <?php echo e($invoice->company->state); ?> &ndash; <?php echo e($invoice->company->pincode); ?></div>
-          <?php if($invoice->company->gstin): ?><div class="addr-line">GSTIN: <?php echo e($invoice->company->gstin); ?></div><?php endif; ?>
+          <?php if($invoice->company->show_company_gstin && $invoice->company->gstin): ?><div class="addr-line">GSTIN: <?php echo e($invoice->company->gstin); ?></div><?php endif; ?>
         </td>
         <td style="width: 2%;"></td>
         <td class="addr-box">
@@ -250,7 +256,7 @@ table.items tfoot td.r { text-align: right; }
           <div class="addr-line"><?php echo e($invoice->client->billing_address); ?></div>
           <div class="addr-line"><?php echo e($invoice->client->billing_city); ?>, <?php echo e($invoice->client->billing_state); ?> &ndash; <?php echo e($invoice->client->billing_pincode); ?></div>
           <?php if($invoice->client->phone): ?><div class="addr-line">Ph: <?php echo e($invoice->client->phone); ?></div><?php endif; ?>
-          <?php if($invoice->client->gstin): ?><div class="addr-line">GSTIN: <?php echo e($invoice->client->gstin); ?></div><?php endif; ?>
+          <?php if($invoice->company->show_client_gstin && $invoice->client->gstin): ?><div class="addr-line">GSTIN: <?php echo e($invoice->client->gstin); ?></div><?php endif; ?>
         </td>
       </tr>
     </table>
@@ -261,7 +267,7 @@ table.items tfoot td.r { text-align: right; }
         <tr>
           <th style="width:22px;">#</th>
           <th>Description</th>
-          <th style="width:40px;">HSN</th>
+          <?php if($showHsn): ?><th style="width:40px;">HSN</th><?php endif; ?>
           <th class="r" style="width:46px;">Qty</th>
           <th style="width:30px;">Unit</th>
           <th class="r" style="width:60px;">Rate (&#8377;)</th>
@@ -279,7 +285,7 @@ table.items tfoot td.r { text-align: right; }
         <tr>
           <td><?php echo e($i + 1); ?></td>
           <td><?php echo e($line->description); ?></td>
-          <td><?php echo e($line->hsn_code ?? '&mdash;'); ?></td>
+          <?php if($showHsn): ?><td><?php echo e($line->hsn_code ?? '&mdash;'); ?></td><?php endif; ?>
           <td class="r"><?php echo e(rtrim(rtrim(number_format($line->quantity, 3), '0'), '.')); ?></td>
           <td><?php echo e($line->unit); ?></td>
           <td class="r"><?php echo e(number_format($line->rate, 2)); ?></td>

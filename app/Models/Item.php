@@ -13,13 +13,18 @@ class Item extends Model
 
     protected $fillable = [
         'name', 'description', 'hsn_code', 'unit',
-        'selling_price', 'tax_rule_id', 'category', 'is_active',
+        'selling_price', 'tax_rule_id', 'category_id', 'is_active',
     ];
 
     protected $casts = [
         'selling_price' => 'decimal:2',
         'is_active'     => 'boolean',
     ];
+
+    public function category(): BelongsTo
+    {
+        return $this->belongsTo(Category::class);
+    }
 
     public function taxRule(): BelongsTo
     {

@@ -32,7 +32,7 @@ class InvoiceController extends Controller
     {
         $companies = Company::where('is_active', true)->get();
         $clients   = Client::where('is_active', true)->orderBy('name')->get();
-        $items     = Item::where('is_active', true)->with('taxRule')->orderBy('name')->get();
+        $items     = Item::where('is_active', true)->with(['taxRule', 'category'])->orderBy('name')->get();
         $taxRules  = TaxRule::where('is_active', true)->get();
         return view('admin.invoices.create', compact('companies', 'clients', 'items', 'taxRules'));
     }
@@ -182,6 +182,138 @@ class InvoiceController extends Controller
     {
         $invoice->load(['company', 'client', 'items.item.taxRule', 'paymentLogs']);
         return view('admin.invoices.show', compact('invoice'));
+    }
+
+    public function edit(Invoice $invoice)
+    {
+        abort_if($invoice->status !== 'draft', 422, 'Only draft invoices can be edited.');
+        $invoice->load(['company', 'client', 'items']);
+        $companies = Company::where('is_active', true)->get();
+        $clients   = Client::where('is_active', true)->orderBy('name')->get();
+        $items     = Item::where('is_active', true)->with(['taxRule', 'category'])->orderBy('name')->get();
+        $taxRules  = TaxRule::where('is_active', true)->get();
+        return view('admin.invoices.edit', compact('invoice', 'companies', 'clients', 'items', 'taxRules'));
+    }
+
+    public function update(Request $request, Invoice $invoice)
+    {
+        abort_if($invoice->status !== 'draft', 422, 'Only draft invoices can be edited.');
+
+        $request->validate([
+            'company_id'     => 'required|exists:companies,id',
+            'client_id'      => 'required|exists:clients,id',
+            'invoice_number' => 'required|string|max:30|unique:invoices,invoice_number,' . $invoice->id,
+            'invoice_date'   => 'required|date',
+            'due_date'       => 'nullable|date',
+            'supply_type'    => 'required|in:intra,inter',
+            'financial_year' => 'required|string|max:10',
+            'notes'          => 'nullable|string',
+            'terms'          => 'nullable|string',
+            'lines'          => 'required|array|min:1',
+            'lines.*.description'   => 'required|string|max:255',
+            'lines.*.quantity'      => 'required|numeric|min:0.001',
+            'lines.*.rate'          => 'required|numeric|min:0',
+            'lines.*.unit'          => 'required|string|max:20',
+            'lines.*.hsn_code'      => 'nullable|string|max:20',
+            'lines.*.item_id'       => 'nullable|exists:items,id',
+            'lines.*.tax_rule_id'   => 'nullable|exists:tax_rules,id',
+            'lines.*.discount_pct'  => 'nullable|numeric|min:0|max:100',
+        ]);
+
+        $company     = Company::findOrFail($request->company_id);
+        $supplyType  = $request->supply_type;
+
+        // Build line-level calculations (same as store)
+        $lineData        = [];
+        $subtotal        = 0;
+        $invoiceDiscount = 0;
+        $invoiceCgst     = 0;
+        $invoiceSgst     = 0;
+        $invoiceIgst     = 0;
+
+        foreach ($request->lines as $i => $line) {
+            $qty           = (float) $line['quantity'];
+            $rate          = (float) $line['rate'];
+            $discPct       = (float) ($line['discount_pct'] ?? 0);
+            $lineSubtotal  = round($qty * $rate, 2);
+            $discAmt       = round($lineSubtotal * $discPct / 100, 2);
+            $taxable       = round($lineSubtotal - $discAmt, 2);
+
+            $cgstRate = $sgstRate = $igstRate = 0.0;
+            $cgstAmt  = $sgstAmt  = $igstAmt  = 0.0;
+
+            if (!empty($line['tax_rule_id'])) {
+                $rule = TaxRule::find($line['tax_rule_id']);
+                if ($rule) {
+                    if ($supplyType === 'intra') {
+                        $cgstRate = (float) $rule->cgst_rate;
+                        $sgstRate = (float) $rule->sgst_rate;
+                        $cgstAmt  = round($taxable * $cgstRate / 100, 2);
+                        $sgstAmt  = round($taxable * $sgstRate / 100, 2);
+                    } else {
+                        $igstRate = (float) $rule->igst_rate;
+                        $igstAmt  = round($taxable * $igstRate / 100, 2);
+                    }
+                }
+            }
+
+            $lineData[] = [
+                'item_id'      => $line['item_id'] ?? null,
+                'description'  => $line['description'],
+                'hsn_code'     => $line['hsn_code'] ?? null,
+                'quantity'     => $qty,
+                'unit'         => $line['unit'],
+                'rate'         => $rate,
+                'discount_percent' => $discPct,
+                'discount_amount' => $discAmt,
+                'taxable_amount' => $taxable,
+                'tax_rule_id'  => $line['tax_rule_id'] ?? null,
+                'cgst_rate'    => $cgstRate,
+                'sgst_rate'    => $sgstRate,
+                'igst_rate'    => $igstRate,
+                'cgst_amount'  => $cgstAmt,
+                'sgst_amount'  => $sgstAmt,
+                'igst_amount'  => $igstAmt,
+                'total'        => round($taxable + $cgstAmt + $sgstAmt + $igstAmt, 2),
+            ];
+
+            $subtotal += $lineSubtotal;
+            $invoiceDiscount += $discAmt;
+            $invoiceCgst += $cgstAmt;
+            $invoiceSgst += $sgstAmt;
+            $invoiceIgst += $igstAmt;
+        }
+
+        DB::transaction(function () use ($invoice, $request, $lineData, $subtotal, $invoiceDiscount, $invoiceCgst, $invoiceSgst, $invoiceIgst) {
+            // Update invoice
+            $invoice->update([
+                'company_id'    => $request->company_id,
+                'client_id'     => $request->client_id,
+                'invoice_number' => $request->invoice_number,
+                'invoice_date'  => $request->invoice_date,
+                'due_date'      => $request->due_date,
+                'supply_type'   => $request->supply_type,
+                'financial_year' => $request->financial_year,
+                'subtotal'      => $subtotal,
+                'discount_amount' => $invoiceDiscount,
+                'taxable_amount' => round($subtotal - $invoiceDiscount, 2),
+                'cgst_total'    => $invoiceCgst,
+                'sgst_total'    => $invoiceSgst,
+                'igst_total'    => $invoiceIgst,
+                'total_tax'     => round($invoiceCgst + $invoiceSgst + $invoiceIgst, 2),
+                'grand_total'   => round($subtotal - $invoiceDiscount + $invoiceCgst + $invoiceSgst + $invoiceIgst, 2),
+                'notes'         => $request->notes,
+                'terms'         => $request->terms,
+            ]);
+
+            // Delete old items and create new ones
+            $invoice->items()->delete();
+            foreach ($lineData as $i => $data) {
+                $invoice->items()->create(array_merge($data, ['sort_order' => $i]));
+            }
+        });
+
+        return redirect()->route('admin.invoices.show', $invoice)->with('success', 'Invoice updated successfully.');
     }
 
     public function destroy(Invoice $invoice)

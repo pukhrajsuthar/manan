@@ -18,7 +18,14 @@
                     @endforeach
                 </select>
             </div></div>
-            <div class="col-md-4"><div class="form-group"><label>Category</label><input name="category" class="form-control" value="{{ old('category', $item->category) }}"></div></div>
+            <div class="col-md-4"><div class="form-group"><label>Category</label>
+                <select name="category_id" class="form-control">
+                    <option value="">-- None --</option>
+                    @foreach($categories as $cat)
+                        <option value="{{ $cat->id }}" {{ old('category_id', $item->category_id) == $cat->id ? 'selected' : '' }}>{{ $cat->name }}</option>
+                    @endforeach
+                </select>
+            </div></div>
         </div>
         <div class="row">
             <div class="col-md-6"><div class="form-group"><label>Selling Price (₹) *</label><input name="selling_price" type="number" step="0.01" class="form-control" value="{{ old('selling_price', $item->selling_price) }}" required></div></div>

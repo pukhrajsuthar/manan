@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Category;
 use App\Models\Item;
 use App\Models\TaxRule;
 use Illuminate\Http\Request;
@@ -11,14 +12,15 @@ class ItemController extends Controller
 {
     public function index()
     {
-        $items = Item::with('taxRule')->latest()->paginate(15);
+        $items = Item::with(['taxRule', 'category'])->latest()->paginate(15);
         return view('admin.items.index', compact('items'));
     }
 
     public function create()
     {
+        $categories = Category::where('is_active', true)->orderBy('order')->get();
         $taxRules = TaxRule::where('is_active', true)->get();
-        return view('admin.items.create', compact('taxRules'));
+        return view('admin.items.create', compact('categories', 'taxRules'));
     }
 
     public function store(Request $request)
@@ -30,7 +32,7 @@ class ItemController extends Controller
             'unit'          => 'required|string|max:20',
             'selling_price' => 'required|numeric|min:0',
             'tax_rule_id'   => 'required|exists:tax_rules,id',
-            'category'      => 'nullable|string|max:100',
+            'category_id'   => 'nullable|exists:categories,id',
             'is_active'     => 'boolean',
         ]);
 
@@ -41,8 +43,9 @@ class ItemController extends Controller
 
     public function edit(Item $item)
     {
+        $categories = Category::where('is_active', true)->orderBy('order')->get();
         $taxRules = TaxRule::where('is_active', true)->get();
-        return view('admin.items.edit', compact('item', 'taxRules'));
+        return view('admin.items.edit', compact('item', 'categories', 'taxRules'));
     }
 
     public function update(Request $request, Item $item)
@@ -54,7 +57,7 @@ class ItemController extends Controller
             'unit'          => 'required|string|max:20',
             'selling_price' => 'required|numeric|min:0',
             'tax_rule_id'   => 'required|exists:tax_rules,id',
-            'category'      => 'nullable|string|max:100',
+            'category_id'   => 'nullable|exists:categories,id',
             'is_active'     => 'boolean',
         ]);
 

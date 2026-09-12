@@ -1,8 +1,8 @@
-<?php $__env->startSection('title', 'New Invoice'); ?>
+<?php $__env->startSection('title', 'Edit Invoice'); ?>
 
 <?php $__env->startSection('content_header'); ?>
 <div class="d-flex justify-content-between align-items-center">
-    <h1>New Invoice</h1>
+    <h1>Edit Invoice: <?php echo e($invoice->invoice_number); ?></h1>
     <a href="<?php echo e(route('admin.invoices.index')); ?>" class="btn btn-default">← Back to Invoices</a>
 </div>
 <?php $__env->stopSection(); ?>
@@ -47,8 +47,8 @@
   ])->keyBy('id');
 ?>
 
-<form method="POST" action="<?php echo e(route('admin.invoices.store')); ?>" id="invoice-form">
-<?php echo csrf_field(); ?>
+<form method="POST" action="<?php echo e(route('admin.invoices.update', $invoice)); ?>" id="invoice-form">
+<?php echo csrf_field(); ?> <?php echo method_field('PUT'); ?>
 
 <div class="row">
   
@@ -76,7 +76,8 @@ unset($__errorArgs, $__bag); ?>" required>
                   data-fy="<?php echo e($co->financial_year); ?>"
                   data-show-discount="<?php echo e($co->show_discount ? '1' : '0'); ?>"
                   data-show-tax="<?php echo e($co->show_tax ? '1' : '0'); ?>"
-                  <?php echo e(old('company_id') == $co->id ? 'selected' : ''); ?>>
+                  data-show-hsn="<?php echo e($co->show_hsn ? '1' : '0'); ?>"
+                  <?php echo e(old('company_id', $invoice->company_id) == $co->id ? 'selected' : ''); ?>>
                   <?php echo e($co->name); ?>
 
                 </option>
@@ -105,7 +106,7 @@ unset($__errorArgs, $__bag); ?>" required>
               <?php $__currentLoopData = $clients; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $cl): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                 <option value="<?php echo e($cl->id); ?>"
                   data-state="<?php echo e($cl->billing_state_code); ?>"
-                  <?php echo e(old('client_id') == $cl->id ? 'selected' : ''); ?>>
+                  <?php echo e(old('client_id', $invoice->client_id) == $cl->id ? 'selected' : ''); ?>>
                   <?php echo e($cl->name); ?>
 
                 </option>
@@ -133,7 +134,7 @@ $message = $__bag->first($__errorArgs[0]); ?> is-invalid <?php unset($message);
 if (isset($__messageOriginal)) { $message = $__messageOriginal; }
 endif;
 unset($__errorArgs, $__bag); ?>"
-                   value="<?php echo e(old('invoice_number')); ?>" required placeholder="Auto-generated">
+                   value="<?php echo e(old('invoice_number', $invoice->invoice_number)); ?>" required>
             <?php $__errorArgs = ['invoice_number'];
 $__bag = $errors->getBag($__errorArgs[1] ?? 'default');
 if ($__bag->has($__errorArgs[0])) :
@@ -154,7 +155,7 @@ $message = $__bag->first($__errorArgs[0]); ?> is-invalid <?php unset($message);
 if (isset($__messageOriginal)) { $message = $__messageOriginal; }
 endif;
 unset($__errorArgs, $__bag); ?>"
-                   value="<?php echo e(old('invoice_date', date('Y-m-d'))); ?>" required>
+                   value="<?php echo e(old('invoice_date', $invoice->invoice_date->format('Y-m-d'))); ?>" required>
             <?php $__errorArgs = ['invoice_date'];
 $__bag = $errors->getBag($__errorArgs[1] ?? 'default');
 if ($__bag->has($__errorArgs[0])) :
@@ -175,7 +176,7 @@ $message = $__bag->first($__errorArgs[0]); ?> is-invalid <?php unset($message);
 if (isset($__messageOriginal)) { $message = $__messageOriginal; }
 endif;
 unset($__errorArgs, $__bag); ?>"
-                   value="<?php echo e(old('due_date')); ?>">
+                   value="<?php echo e(old('due_date', $invoice->due_date?->format('Y-m-d'))); ?>">
             <?php $__errorArgs = ['due_date'];
 $__bag = $errors->getBag($__errorArgs[1] ?? 'default');
 if ($__bag->has($__errorArgs[0])) :
@@ -190,8 +191,8 @@ unset($__errorArgs, $__bag); ?>
           <div class="col-md-4 form-group">
             <label>Supply Type <span class="text-danger">*</span></label>
             <select name="supply_type" id="supply_type" class="form-control" required>
-              <option value="intra" <?php echo e(old('supply_type','intra') === 'intra' ? 'selected' : ''); ?>>Intra-state (CGST + SGST)</option>
-              <option value="inter" <?php echo e(old('supply_type') === 'inter' ? 'selected' : ''); ?>>Inter-state (IGST)</option>
+              <option value="intra" <?php echo e(old('supply_type', $invoice->supply_type) === 'intra' ? 'selected' : ''); ?>>Intra-state (CGST + SGST)</option>
+              <option value="inter" <?php echo e(old('supply_type', $invoice->supply_type) === 'inter' ? 'selected' : ''); ?>>Inter-state (IGST)</option>
             </select>
           </div>
           <div class="col-md-4 form-group">
@@ -205,7 +206,7 @@ $message = $__bag->first($__errorArgs[0]); ?> is-invalid <?php unset($message);
 if (isset($__messageOriginal)) { $message = $__messageOriginal; }
 endif;
 unset($__errorArgs, $__bag); ?>"
-                   value="<?php echo e(old('financial_year', '2025-26')); ?>" required placeholder="e.g. 2025-26">
+                   value="<?php echo e(old('financial_year', $invoice->financial_year)); ?>" required>
             <?php $__errorArgs = ['financial_year'];
 $__bag = $errors->getBag($__errorArgs[1] ?? 'default');
 if ($__bag->has($__errorArgs[0])) :
@@ -232,18 +233,30 @@ unset($__errorArgs, $__bag); ?>
       <div class="card-body p-0">
         <div class="table-responsive">
           <table class="table table-sm table-bordered mb-0" id="lines-table">
+            <colgroup>
+              <col style="width:32px">
+              <col style="min-width:160px">
+              <col style="width:70px" class="hsn-column">
+              <col style="width:80px">
+              <col style="width:60px">
+              <col style="width:100px">
+              <col style="width:65px" class="discount-column">
+              <col style="width:130px" class="tax-column">
+              <col style="width:100px">
+              <col style="width:32px">
+            </colgroup>
             <thead class="thead-dark">
               <tr>
-                <th style="width:32px">#</th>
-                <th style="min-width:160px">Item / Description</th>
-                <th style="width:70px">HSN</th>
-                <th style="width:80px">Qty</th>
-                <th style="width:60px">Unit</th>
-                <th style="width:100px">Rate (₹)</th>
-                <th style="width:65px" id="col-disc-header" class="discount-column">Disc %</th>
-                <th style="width:130px" id="col-tax-header" class="tax-column">Tax Rule</th>
-                <th style="width:100px" class="text-right">Amount (₹)</th>
-                <th style="width:32px"></th>
+                <th>#</th>
+                <th>Item / Description</th>
+                <th class="hsn-column">HSN</th>
+                <th>Qty</th>
+                <th>Unit</th>
+                <th>Rate (₹)</th>
+                <th class="discount-column">Disc %</th>
+                <th class="tax-column">Tax Rule</th>
+                <th class="text-right">Amount (₹)</th>
+                <th></th>
               </tr>
             </thead>
             <tbody id="lines-body">
@@ -260,11 +273,11 @@ unset($__errorArgs, $__bag); ?>
         <div class="row">
           <div class="col-md-6 form-group">
             <label>Notes <small class="text-muted">(shown on invoice)</small></label>
-            <textarea name="notes" class="form-control" rows="3"><?php echo e(old('notes')); ?></textarea>
+            <textarea name="notes" class="form-control" rows="3"><?php echo e(old('notes', $invoice->notes)); ?></textarea>
           </div>
           <div class="col-md-6 form-group">
             <label>Terms &amp; Conditions</label>
-            <textarea name="terms" class="form-control" rows="3"><?php echo e(old('terms', 'Payment as per agreed schedule. Final amount may vary based on actual site measurements.')); ?></textarea>
+            <textarea name="terms" class="form-control" rows="3"><?php echo e(old('terms', $invoice->terms)); ?></textarea>
           </div>
         </div>
       </div>
@@ -305,22 +318,47 @@ unset($__errorArgs, $__bag); ?>
     <td>
       <select class="form-control form-control-sm item-select mb-1" name="lines[__IDX__][item_id]">
         <option value="">— Custom —</option>
-        <?php $__currentLoopData = $items; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $it): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-          <option value="<?php echo e($it->id); ?>"
-            data-unit="<?php echo e($it->unit); ?>"
-            data-hsn="<?php echo e($it->hsn_code ?? ''); ?>"
-            data-rate="<?php echo e($it->selling_price); ?>"
-            data-taxrule="<?php echo e($it->tax_rule_id); ?>">
-            <?php echo e($it->name); ?>
+        <?php
+          $grouped = [];
+          foreach($items as $item) {
+            try {
+              $catName = 'Uncategorized';
+              $catOrder = 999;
+              if (!empty($item->category_id) && $item->category) {
+                $catName = $item->category->name ?? 'Uncategorized';
+                $catOrder = $item->category->order ?? 999;
+              }
+              if (!isset($grouped[$catName])) {
+                $grouped[$catName] = ['order' => $catOrder, 'items' => []];
+              }
+              $grouped[$catName]['items'][] = $item;
+            } catch (Exception $e) {
+              // Skip items with category errors
+              continue;
+            }
+          }
+          uasort($grouped, function($a, $b) { return $a['order'] - $b['order']; });
+        ?>
+        <?php $__currentLoopData = $grouped; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $categoryName => $data): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+          <optgroup label="<?php echo e($categoryName); ?>">
+            <?php $__currentLoopData = $data['items']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $it): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+              <option value="<?php echo e($it->id); ?>"
+                data-unit="<?php echo e($it->unit); ?>"
+                data-hsn="<?php echo e($it->hsn_code ?? ''); ?>"
+                data-rate="<?php echo e($it->selling_price); ?>"
+                data-taxrule="<?php echo e($it->tax_rule_id); ?>">
+                <?php echo e($it->name); ?>
 
-          </option>
+              </option>
+            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+          </optgroup>
         <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
       </select>
       <input type="text" class="form-control form-control-sm line-desc" name="lines[__IDX__][description]" placeholder="Description" required>
       <input type="hidden" class="line-tax-rule" name="lines[__IDX__][tax_rule_id]" value="">
     </td>
-    <td><input type="text" class="form-control form-control-sm line-hsn" name="lines[__IDX__][hsn_code]" placeholder="HSN" maxlength="20"></td>
-    <td><input type="number" class="form-control form-control-sm line-qty" name="lines[__IDX__][quantity]" value="1" step="0.001" min="0.001" required></td>
+    <td class="hsn-column"><input type="text" class="form-control form-control-sm line-hsn" name="lines[__IDX__][hsn_code]" placeholder="HSN" maxlength="20"></td>
+    <td><input type="number" class="form-control form-control-sm line-qty" name="lines[__IDX__][quantity]" value="1" step="1" min="1" required></td>
     <td><input type="text" class="form-control form-control-sm line-unit" name="lines[__IDX__][unit]" value="Nos" maxlength="20" required></td>
     <td><input type="number" class="form-control form-control-sm line-rate" name="lines[__IDX__][rate]" value="0" step="0.01" min="0" required></td>
     <td class="discount-column"><input type="number" class="form-control form-control-sm line-disc" name="lines[__IDX__][discount_pct]" value="0" step="0.01" min="0" max="100"></td>
@@ -346,6 +384,29 @@ unset($__errorArgs, $__bag); ?>
 </template>
 <?php $__env->stopSection(); ?>
 
+<?php $__env->startPush('css'); ?>
+<style>
+  #lines-table.hide-discount .discount-column {
+    display: none !important;
+    width: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  #lines-table.hide-tax .tax-column {
+    display: none !important;
+    width: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  #lines-table.hide-hsn .hsn-column {
+    display: none !important;
+    width: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+</style>
+<?php $__env->stopPush(); ?>
+
 <?php $__env->startPush('js'); ?>
 <script>
 (function() {
@@ -368,10 +429,11 @@ unset($__errorArgs, $__bag); ?>
     }
     document.getElementById('financial_year').value = opt.dataset.fy || '';
 
-    // Toggle discount and tax columns based on company settings
+    // Toggle discount, tax, and hsn columns based on company settings
     const showDiscount = opt.dataset.showDiscount === '1';
     const showTax      = opt.dataset.showTax === '1';
-    toggleColumns(showDiscount, showTax);
+    const showHsn      = opt.dataset.showHsn === '1';
+    toggleColumns(showDiscount, showTax, showHsn);
   });
 
   // ── Add row ──
@@ -435,11 +497,20 @@ unset($__errorArgs, $__bag); ?>
     });
 
     if (prefill) {
+      // Set item dropdown if item_id is provided
+      if (prefill.item_id) {
+        itemSel.value = prefill.item_id;
+      }
       descInput.value = prefill.description || '';
       hsnInput.value  = prefill.hsn || '';
       qtyInput.value  = prefill.qty || 1;
       unitInput.value = prefill.unit || 'Nos';
       rateInput.value = prefill.rate || 0;
+      discInput.value = prefill.disc || 0;
+      // Set tax rule if provided
+      if (prefill.taxRule) {
+        taxSel.value = prefill.taxRule;
+      }
     }
     syncTaxHidden(taxSel, taxHidden);
   }
@@ -520,20 +591,54 @@ unset($__errorArgs, $__bag); ?>
   function set(id, val) { const el = document.getElementById(id); if (el) el.textContent = val; }
   function toggle(id, show) { const el = document.getElementById(id); if (el) el.style.display = show ? '' : 'none'; }
 
-  // ── Toggle discount/tax columns visibility based on company ──
-  function toggleColumns(showDiscount, showTax) {
-    // Hide/show discount column
-    document.querySelectorAll('.discount-column').forEach(el => {
-      el.style.display = showDiscount ? '' : 'none';
-    });
-    // Hide/show tax column
-    document.querySelectorAll('.tax-column').forEach(el => {
-      el.style.display = showTax ? '' : 'none';
-    });
+  // ── Toggle discount/tax/hsn columns visibility based on company ──
+  function showAllColumns() {
+    toggleColumns(true, true, true);
   }
 
-  // Start with one empty row
-  addRow();
+  function toggleColumns(showDiscount, showTax, showHsn) {
+    const table = document.getElementById('lines-table');
+    if (!table) return;
+
+    // Add/remove classes for visibility
+    if (showDiscount) {
+      table.classList.remove('hide-discount');
+    } else {
+      table.classList.add('hide-discount');
+    }
+
+    if (showTax) {
+      table.classList.remove('hide-tax');
+    } else {
+      table.classList.add('hide-tax');
+    }
+
+    if (showHsn) {
+      table.classList.remove('hide-hsn');
+    } else {
+      table.classList.add('hide-hsn');
+    }
+  }
+
+  // Populate line items from existing invoice
+  <?php if(isset($invoice) && $invoice->items->count() > 0): ?>
+    <?php $__currentLoopData = $invoice->items; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $item): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+      addRow({
+        item_id: <?php echo e($item->item_id ?? 'null'); ?>,
+        description: "<?php echo e(addslashes($item->description)); ?>",
+        hsn: "<?php echo e(addslashes($item->hsn_code ?? '')); ?>",
+        qty: <?php echo e($item->quantity); ?>,
+        unit: "<?php echo e(addslashes($item->unit)); ?>",
+        rate: <?php echo e($item->rate); ?>,
+        disc: <?php echo e($item->discount_percent ?? 0); ?>,
+        taxRule: <?php echo e($item->tax_rule_id ?? 'null'); ?>
+
+      });
+    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+  <?php else: ?>
+    // Start with one empty row for new invoice
+    addRow();
+  <?php endif; ?>
 
   // Initialize column visibility on page load
   const companySel = document.getElementById('company_id');
@@ -541,10 +646,14 @@ unset($__errorArgs, $__bag); ?>
     const opt = companySel.options[companySel.selectedIndex];
     const showDiscount = opt.dataset.showDiscount === '1';
     const showTax = opt.dataset.showTax === '1';
-    toggleColumns(showDiscount, showTax);
+    const showHsn = opt.dataset.showHsn === '1';
+    toggleColumns(showDiscount, showTax, showHsn);
   }
+
+  // Recalculate totals after populating rows
+  recalcAll();
 })();
 </script>
 <?php $__env->stopPush(); ?>
 
-<?php echo $__env->make('adminlte::page', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH /var/www/html/resources/views/admin/invoices/create.blade.php ENDPATH**/ ?>
+<?php echo $__env->make('adminlte::page', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH /var/www/html/resources/views/admin/invoices/edit.blade.php ENDPATH**/ ?>

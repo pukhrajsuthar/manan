@@ -16,6 +16,11 @@
         <div class="card">
             <div class="card-header"><h3 class="card-title">Invoice Details</h3>
                 <div class="card-tools">
+                    @if($invoice->status === 'draft')
+                        <a href="{{ route('admin.invoices.edit', $invoice) }}" class="btn btn-sm btn-warning">
+                            <i class="fas fa-edit"></i> Edit
+                        </a>
+                    @endif
                     <a href="{{ route('admin.invoices.print', $invoice) }}" target="_blank" class="btn btn-sm btn-secondary">
                         <i class="fas fa-print"></i> Print
                     </a>
@@ -48,13 +53,17 @@
                         <strong>Company</strong><br>
                         {{ $invoice->company->name ?? '—' }}<br>
                         {{ $invoice->company->address ?? '' }}, {{ $invoice->company->city ?? '' }}<br>
+                        @if($invoice->company->show_company_gstin)
                         GSTIN: {{ $invoice->company->gstin ?? '—' }}
+                        @endif
                     </div>
                     <div class="col-md-6">
                         <strong>Client</strong><br>
                         {{ $invoice->client->name ?? '—' }}<br>
                         {{ $invoice->client->billing_address ?? '' }}, {{ $invoice->client->billing_city ?? '' }}<br>
+                        @if($invoice->company->show_client_gstin)
                         GSTIN: {{ $invoice->client->gstin ?? '—' }}
+                        @endif
                     </div>
                 </div>
                 <hr>
@@ -92,7 +101,7 @@
                     </tbody>
                     <tfoot>
                         @php
-                            $colspanCount = 6;
+                            $colspanCount = 5; // #, Item, Qty, Unit, Rate
                             if($invoice->company->show_hsn) $colspanCount++;
                             if($invoice->company->show_discount) $colspanCount++;
                             if($invoice->company->show_tax) $colspanCount++;

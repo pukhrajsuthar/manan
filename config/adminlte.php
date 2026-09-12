@@ -324,6 +324,11 @@ return [
             'icon' => 'fas fa-fw fa-users',
         ],
         [
+            'text' => 'Categories',
+            'url'  => 'admin/categories',
+            'icon' => 'fas fa-fw fa-tags',
+        ],
+        [
             'text' => 'Items / Products',
             'url'  => 'admin/items',
             'icon' => 'fas fa-fw fa-boxes',

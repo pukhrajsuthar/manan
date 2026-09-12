@@ -44,12 +44,18 @@ class CompanyController extends Controller
             'show_discount'        => 'boolean',
             'show_tax'             => 'boolean',
             'show_hsn'             => 'boolean',
+            'show_company_gstin'   => 'boolean',
+            'show_client_gstin'    => 'boolean',
+            'invoice_copies'       => 'required|integer|in:1,2',
         ]);
 
-        $data['is_active']       = $request->boolean('is_active', true);
-        $data['show_discount']   = $request->boolean('show_discount', true);
-        $data['show_tax']        = $request->boolean('show_tax', true);
-        $data['show_hsn']        = $request->boolean('show_hsn', true);
+        $data['is_active']         = $request->boolean('is_active', true);
+        $data['show_discount']     = $request->boolean('show_discount', true);
+        $data['show_tax']          = $request->boolean('show_tax', true);
+        $data['show_hsn']          = $request->boolean('show_hsn', true);
+        $data['show_company_gstin'] = $request->boolean('show_company_gstin', true);
+        $data['show_client_gstin']  = $request->boolean('show_client_gstin', true);
+        $data['invoice_copies']    = $request->integer('invoice_copies', 2);
         $data['invoice_counter'] = 1;
 
         Company::create($data);
@@ -86,12 +92,18 @@ class CompanyController extends Controller
             'show_discount'        => 'boolean',
             'show_tax'             => 'boolean',
             'show_hsn'             => 'boolean',
+            'show_company_gstin'   => 'boolean',
+            'show_client_gstin'    => 'boolean',
+            'invoice_copies'       => 'required|integer|in:1,2',
         ]);
 
-        $data['is_active']     = $request->boolean('is_active');
-        $data['show_discount'] = $request->boolean('show_discount');
-        $data['show_tax']      = $request->boolean('show_tax');
-        $data['show_hsn']      = $request->boolean('show_hsn');
+        $data['is_active']          = $request->boolean('is_active');
+        $data['show_discount']      = $request->boolean('show_discount');
+        $data['show_tax']           = $request->boolean('show_tax');
+        $data['show_hsn']           = $request->boolean('show_hsn');
+        $data['show_company_gstin'] = $request->boolean('show_company_gstin');
+        $data['show_client_gstin']  = $request->boolean('show_client_gstin');
+        $data['invoice_copies']     = $request->integer('invoice_copies');
         $company->update($data);
         return redirect()->route('admin.companies.index')->with('success', 'Company updated.');
     }

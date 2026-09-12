@@ -77,6 +77,36 @@
                         <input type="checkbox" name="show_tax" class="custom-control-input" id="show_tax" value="1" <?php echo e(old('show_tax', $company->show_tax) ? 'checked' : ''); ?>>
                         <label class="custom-control-label" for="show_tax">Show Tax Column</label>
                     </div>
+                    <div class="custom-control custom-switch">
+                        <input type="checkbox" name="show_hsn" class="custom-control-input" id="show_hsn" value="1" <?php echo e(old('show_hsn', $company->show_hsn) ? 'checked' : ''); ?>>
+                        <label class="custom-control-label" for="show_hsn">Show HSN Column</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row mt-3">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label>GSTIN Display Options</label>
+                    <div class="custom-control custom-switch mt-2">
+                        <input type="checkbox" name="show_company_gstin" class="custom-control-input" id="show_company_gstin" value="1" <?php echo e(old('show_company_gstin', $company->show_company_gstin) ? 'checked' : ''); ?>>
+                        <label class="custom-control-label" for="show_company_gstin">Show Company GSTIN</label>
+                    </div>
+                    <div class="custom-control custom-switch">
+                        <input type="checkbox" name="show_client_gstin" class="custom-control-input" id="show_client_gstin" value="1" <?php echo e(old('show_client_gstin', $company->show_client_gstin) ? 'checked' : ''); ?>>
+                        <label class="custom-control-label" for="show_client_gstin">Show Client GSTIN</label>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label>Invoice PDF Copies</label>
+                    <select name="invoice_copies" class="form-control" required>
+                        <option value="1" <?php echo e(old('invoice_copies', $company->invoice_copies) == 1 ? 'selected' : ''); ?>>1 Copy (Customer Only)</option>
+                        <option value="2" <?php echo e(old('invoice_copies', $company->invoice_copies) == 2 ? 'selected' : ''); ?>>2 Copies (Customer + Office)</option>
+                    </select>
                 </div>
             </div>
         </div>
