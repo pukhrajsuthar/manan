@@ -27,11 +27,16 @@ RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local
 # Copy project files
 COPY . .
 
+# Create required directories
+RUN mkdir -p /app/bootstrap/cache /app/storage && \
+    chmod -R 777 /app/bootstrap/cache /app/storage
+
 # Install Laravel dependencies
 RUN composer install --no-dev --optimize-autoloader
 
-# Set permissions
-RUN chown -R www-data:www-data /app/storage /app/bootstrap/cache
+# Set proper permissions
+RUN chown -R www-data:www-data /app/storage /app/bootstrap/cache && \
+    chmod -R 755 /app/storage /app/bootstrap/cache
 
 EXPOSE 8000
 
