@@ -2,8 +2,9 @@ FROM php:8.2-fpm
 
 WORKDIR /app
 
-# Install dependencies
-RUN apt-get update && apt-get install -y \
+# Update package list and install dependencies
+RUN apt-get update && apt-get install -y --fix-missing \
+    ca-certificates \
     git \
     curl \
     libpng-dev \
