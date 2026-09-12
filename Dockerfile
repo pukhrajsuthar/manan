@@ -13,12 +13,10 @@ RUN docker-php-ext-install zip
 
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
-COPY composer.json ./
+COPY . .
 
 RUN mkdir -p /app/bootstrap/cache /app/storage && \
     composer install --no-dev --optimize-autoloader --no-interaction
-
-COPY . .
 
 RUN chown -R www-data:www-data /app/storage /app/bootstrap/cache && \
     chmod -R 755 /app/storage /app/bootstrap/cache
