@@ -1,47 +1,21 @@
-FROM php:8.2-alpine AS builder
+FROM php:8.2-fpm
 
 WORKDIR /app
 
-RUN apk add --no-cache composer git \
-    libpng-dev \
-    oniguruma-dev \
-    libxml2-dev
-
-RUN docker-php-ext-install -j$(nproc) \
-    pdo_mysql \
-    mbstring \
-    exif \
-    pcntl \
-    bcmath
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    composer \
+    git \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
 
 COPY composer.json ./
 
 RUN mkdir -p /app/bootstrap/cache /app/storage && \
     composer install --no-dev --optimize-autoloader --no-interaction
 
-FROM php:8.2-alpine
-
-WORKDIR /app
-
-RUN apk add --no-cache \
-    curl \
-    libpng \
-    oniguruma \
-    libxml2
-
-RUN docker-php-ext-install -j$(nproc) \
-    pdo_mysql \
-    mbstring \
-    exif \
-    pcntl \
-    bcmath
-
-COPY --from=builder /app/vendor ./vendor
-COPY --from=builder /app/bootstrap ./bootstrap
 COPY . .
 
-RUN mkdir -p /app/storage && \
-    chown -R www-data:www-data /app/storage /app/bootstrap/cache && \
+RUN chown -R www-data:www-data /app/storage /app/bootstrap/cache && \
     chmod -R 755 /app/storage /app/bootstrap/cache
 
 EXPOSE 8000
