@@ -4,7 +4,7 @@ WORKDIR /app
 
 RUN apk add --no-cache composer git
 
-COPY composer.json composer.lock ./
+COPY composer.json ./
 
 RUN mkdir -p /app/bootstrap/cache /app/storage && \
     composer install --no-dev --optimize-autoloader --no-interaction
