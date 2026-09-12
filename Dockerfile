@@ -1,10 +1,12 @@
-FROM php:8.2-fpm
+FROM php:8.2-cli
 
 WORKDIR /app
 
-# Update package list and install dependencies
-RUN apt-get update && apt-get install -y --fix-missing \
-    ca-certificates \
+# Fix apt sources and install dependencies
+RUN rm -rf /var/lib/apt/lists/* && \
+    apt-get clean && \
+    apt-get update --allow-releaseinfo-change && \
+    apt-get install -y \
     git \
     curl \
     libpng-dev \
@@ -12,7 +14,6 @@ RUN apt-get update && apt-get install -y --fix-missing \
     libxml2-dev \
     zip \
     unzip \
-    mysql-client \
     && rm -rf /var/lib/apt/lists/*
 
 # Install PHP extensions
