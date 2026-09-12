@@ -1,23 +1,20 @@
-FROM php:8.2-cli
+FROM php:8.2-alpine
 
 WORKDIR /app
 
-# Fix apt sources and install dependencies
-RUN rm -rf /var/lib/apt/lists/* && \
-    apt-get clean && \
-    apt-get update --allow-releaseinfo-change && \
-    apt-get install -y \
+# Install system dependencies
+RUN apk add --no-cache \
     git \
     curl \
-    libpng-dev \
-    libonig-dev \
-    libxml2-dev \
     zip \
     unzip \
-    && rm -rf /var/lib/apt/lists/*
+    libpng-dev \
+    oniguruma-dev \
+    libxml2-dev \
+    $PHPIZE_DEPS
 
 # Install PHP extensions
-RUN docker-php-ext-install \
+RUN docker-php-ext-install -j$(nproc) \
     pdo_mysql \
     mbstring \
     exif \
