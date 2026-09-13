@@ -17,4 +17,11 @@ RUN mkdir -p bootstrap/cache storage && \
 
 EXPOSE 8000
 
-CMD sh -c "mkdir -p bootstrap/cache storage && chmod -R 777 bootstrap/cache storage && php artisan serve --host=0.0.0.0 --port=8000"
+ENV DB_CONNECTION=mysql
+ENV DB_HOST=mysql
+ENV DB_PORT=3306
+ENV DB_DATABASE=manan_invoice
+ENV DB_USERNAME=manan
+ENV DB_PASSWORD=manan@2024
+
+CMD sh -c "mkdir -p bootstrap/cache storage && chmod -R 777 bootstrap/cache storage && php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=8000"
